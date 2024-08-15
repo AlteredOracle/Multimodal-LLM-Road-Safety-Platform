@@ -1,60 +1,66 @@
 import streamlit as st
-from config import Config
-from utils import apply_css, initialize_session, get_model_name, create_chat_session
+import os
+from PIL import Image
+import google.generativeai as genai
+from utils import apply_distortion, get_gemini_response
 
-def main():
-    st.set_page_config(page_title="Chatbot with Gemini Models", layout="wide")
+# Set page configuration
+st.set_page_config(page_title="Image CREATION", layout="wide")
 
-    initialize_session()
+# Sidebar for settings
+st.sidebar.title("Settings")
 
-    st.sidebar.title("Settings")
-    st.session_state['dark_mode'] = st.sidebar.checkbox("Dark Mode", value=st.session_state['dark_mode'])
+model_choice = st.sidebar.selectbox(
+    "Choose Model:",
+    ["gemini-1.5-flash-latest", "gemini-1.5-pro"]
+)
 
-    model_choice = st.sidebar.selectbox(
-        "Choose Model:",
-        ["Gemini 1.5 Flash", "Gemini 1.5 Pro", "Gemini 1.0 Pro"]
-    )
+st.sidebar.subheader("Distortions")
 
-    temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 1.0)
-    top_p = st.sidebar.slider("Top P", 0.0, 1.0, 0.95)
-    top_k = st.sidebar.slider("Top K", 0, 100, 64)
-    max_output_tokens = st.sidebar.slider("Max Output Tokens", 1, 8192, 8192)
+distortion_type = st.sidebar.selectbox(
+    "Choose Distortion:",
+    ["None", "Blur", "Brightness", "Contrast", "Sharpness", "Color", "Rain"]
+)
 
-    apply_css(st.session_state['dark_mode'])
+if distortion_type != "None":
+    intensity = st.sidebar.slider("Distortion Intensity", 0.5, 2.0, 1.0)
+else:
+    intensity = 1.0
 
-    st.title("Chatbot with Gemini Models")
+st.title("Chatbot with Gemini Models")
 
-    api_key = st.text_input("Enter your Gemini API key:", type="password")
-    if api_key:
-        model_name = get_model_name(model_choice)
-        chat_session = create_chat_session(api_key, model_name, temperature, top_p, top_k, max_output_tokens)
+api_key = st.text_input("Enter your Gemini API key:", type="password")
 
-        if 'chat_history' not in st.session_state:
-            st.session_state['chat_history'] = []
+if api_key:
+    os.environ['GEMINI_API_KEY'] = api_key
+    genai.configure(api_key=os.environ['GEMINI_API_KEY'])
 
-        user_input = st.text_input("You: ", key="user_input")
-        if user_input:
-            response = chat_session.send_message(user_input)
-            st.session_state.chat_history.append(("user", user_input))
-            st.session_state.chat_history.append(("ai", response.text, model_name))
+    input_text = st.text_input("Input Prompt:", key="input")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-        chat_container = st.container()
-        with chat_container:
-            for entry in st.session_state.chat_history:
-                if entry[0] == "user":
-                    st.markdown(f"""
-                        <div class="chat-message user">
-                            <div class="chat-icon user"></div>
-                            <div class="chat-bubble user">{entry[1]}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                        <div class="chat-message ai">
-                            <div class="chat-icon ai"></div>
-                            <div class="chat-bubble ai">{entry[1]} <br><small>{entry[2]}</small></div>
-                        </div>
-                    """, unsafe_allow_html=True)
+    image = None
+    if uploaded_file:
+        image = Image.open(uploaded_file)
+        
+        if distortion_type != "None":
+            image = apply_distortion(image, distortion_type, intensity)
+        
+        st.image(image, caption="Uploaded Image.", use_column_width=True)
 
-if __name__ == "__main__":
-    main()
+    submit = st.button("Analyse")
+
+    if submit:
+        if input_text or image:
+            response = get_gemini_response(input_text, image, model_choice)
+            
+            st.subheader("User Input")
+            st.write(input_text if input_text else "[No text input]")
+            
+            st.subheader("AI Response")
+            st.write(response)
+            
+            st.warning("Please clear or change the input if you wish to analyze a different image or prompt.")
+        else:
+            st.warning("Please provide either an input prompt, an image, or both.")
+else:
+    st.warning("Please enter your API key to proceed.")
