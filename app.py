@@ -27,7 +27,7 @@ if distortion_type != "None":
 else:
     intensity = 1.0
 
-st.title("Chatbot with Gemini Models")
+st.title("Multimodal LLM Road Safety Platform")
 
 api_key = st.text_input("Enter your Gemini API key:", type="password")
 
