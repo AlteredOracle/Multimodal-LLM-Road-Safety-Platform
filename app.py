@@ -3,6 +3,7 @@ import os
 from PIL import Image
 import google.generativeai as genai
 from utils import apply_distortion, get_gemini_response
+import traceback  # Add this line
 
 # Set page configuration
 st.set_page_config(page_title="Multimodal LLM Road Safety Platform", layout="wide")
