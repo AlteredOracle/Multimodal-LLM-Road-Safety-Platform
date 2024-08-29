@@ -19,13 +19,16 @@ st.sidebar.subheader("Distortions")
 
 distortion_type = st.sidebar.selectbox(
     "Choose Distortion:",
-    ["None", "Blur", "Brightness", "Contrast", "Sharpness", "Color", "Rain"]
+    ["None", "Blur", "Brightness", "Contrast", "Sharpness", "Color", "Rain", "Overlay"]
 )
 
 if distortion_type != "None":
-    intensity = st.sidebar.slider("Distortion Intensity", 0.5, 2.0, 1.0)
+    intensity = st.sidebar.slider("Distortion Intensity", 0.0, 1.0, 0.5)
+    if distortion_type == "Overlay":
+        overlay_image = st.sidebar.file_uploader("Upload overlay image", type=["png", "jpg", "jpeg"])
 else:
     intensity = 1.0
+    overlay_image = None
 
 st.title("Multimodal LLM Road Safety Platform")
 
@@ -43,7 +46,7 @@ if api_key:
         image = Image.open(uploaded_file)
         
         if distortion_type != "None":
-            image = apply_distortion(image, distortion_type, intensity)
+            image = apply_distortion(image, distortion_type, intensity, overlay_image)
         
         st.image(image, caption="Uploaded Image.", use_column_width=True)
 
