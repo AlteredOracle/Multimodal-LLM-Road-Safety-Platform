@@ -100,10 +100,43 @@ if api_key:
     else:  # Bulk Analysis
         st.subheader("Bulk Analysis")
         
-        # File uploader for multiple images
-        uploaded_files = st.file_uploader("Choose multiple images...", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+        analysis_source = st.radio("Choose analysis source:", ["Upload Files", "Specify Folder Path"])
         
-        # Clear all image settings if the number of uploaded files changes
+        if analysis_source == "Upload Files":
+            # File uploader for multiple images
+            uploaded_files = st.file_uploader("Choose multiple images...", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+        else:
+            # Folder path input with instructions
+            st.write("To specify a folder path:")
+            st.write("1. Open a File Explorer or Finder window on your computer.")
+            st.write("2. Navigate to the folder containing your images.")
+            st.write("3. Copy the full path of that folder.")
+            st.write("4. Paste the path into the text box below.")
+            
+            folder_path = st.text_input("Enter folder path containing images:")
+            
+            if folder_path:
+                if os.path.isdir(folder_path):
+                    image_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                    uploaded_files = [os.path.join(folder_path, f) for f in image_files]
+                    st.success(f"Found {len(uploaded_files)} images in the specified folder.")
+                    
+                    # Display a sample of found images
+                    if uploaded_files:
+                        st.write("Sample of found images:")
+                        sample_size = min(5, len(uploaded_files))
+                        sample_images = uploaded_files[:sample_size]
+                        cols = st.columns(sample_size)
+                        for i, img_path in enumerate(sample_images):
+                            with cols[i]:
+                                st.image(Image.open(img_path), caption=os.path.basename(img_path), use_column_width=True)
+                else:
+                    st.error("Invalid folder path. Please check and try again.")
+                    uploaded_files = []
+            else:
+                uploaded_files = []
+
+        # Clear all image settings if the number of files changes
         if 'previous_file_count' not in st.session_state:
             st.session_state.previous_file_count = 0
         
@@ -128,18 +161,19 @@ if api_key:
             st.session_state.image_settings = st.session_state.image_settings[:len(uploaded_files)]
             
             for i, (file, settings) in enumerate(zip(uploaded_files, st.session_state.image_settings)):
-                with st.expander(f"Settings for {file.name}", expanded=True):
+                file_name = file.name if hasattr(file, 'name') else os.path.basename(file)
+                with st.expander(f"Settings for {file_name}", expanded=True):
                     col1, col2 = st.columns([1, 2])
                     
                     with col1:
                         # Load and process image
-                        image = Image.open(file)
+                        image = Image.open(file) if isinstance(file, str) else Image.open(file)
                         processed_image = apply_distortion(
                             image, 
                             settings["distortion"],
                             settings["intensity"]
                         )
-                        st.image(processed_image, caption=f"Preview: {file.name}", use_column_width=True)
+                        st.image(processed_image, caption=f"Preview: {file_name}", use_column_width=True)
                     
                     with col2:
                         # Distortion selection
@@ -172,7 +206,8 @@ if api_key:
             
             for i, (file, settings) in enumerate(zip(uploaded_files, st.session_state.image_settings)):
                 try:
-                    image = Image.open(file)
+                    image = Image.open(file) if isinstance(file, str) else Image.open(file)
+                    file_name = file.name if hasattr(file, 'name') else os.path.basename(file)
                     
                     # Apply distortion
                     processed_image = apply_distortion(image, settings["distortion"], settings["intensity"])
@@ -182,7 +217,7 @@ if api_key:
                     
                     # Add result to list
                     results.append({
-                        "Image": file.name,
+                        "Image": file_name,
                         "Distortion": settings["distortion"],
                         "Intensity": settings["intensity"],
                         "Input Text": settings["input_text"],
@@ -190,12 +225,12 @@ if api_key:
                     })
                     
                     # Show AI response
-                    st.write(f"AI Response for {file.name}:")
+                    st.write(f"AI Response for {file_name}:")
                     st.write(response)
                     st.markdown("---")  # Add a separator between images
                     
                 except Exception as e:
-                    st.error(f"Error processing {file.name}: {str(e)}")
+                    st.error(f"Error processing {file_name}: {str(e)}")
                 
                 progress_bar.progress((i + 1) / len(uploaded_files))
             
@@ -215,7 +250,7 @@ if api_key:
             else:
                 st.warning("No results were generated. Please check your inputs and try again.")
         elif not uploaded_files:
-            st.warning("Please upload at least one image to proceed with bulk analysis.")
+            st.warning("Please upload at least one image or specify a valid folder path to proceed with bulk analysis.")
 
 else:
     st.warning("Please enter your API key to proceed.")
