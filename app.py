@@ -100,72 +100,104 @@ if api_key:
     else:  # Bulk Analysis
         st.subheader("Bulk Analysis")
         
-        # Create a list to store image settings
-        image_settings = []
-        
         # File uploader for multiple images
         uploaded_files = st.file_uploader("Choose multiple images...", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
         
+        # Clear all image settings if the number of uploaded files changes
+        if 'previous_file_count' not in st.session_state:
+            st.session_state.previous_file_count = 0
+        
+        if len(uploaded_files) != st.session_state.previous_file_count:
+            st.session_state.image_settings = []
+            st.session_state.previous_file_count = len(uploaded_files)
+        
+        # Create or update image settings
+        if 'image_settings' not in st.session_state:
+            st.session_state.image_settings = []
+        
         if uploaded_files:
-            for i, file in enumerate(uploaded_files):
+            # Ensure image_settings has the same length as uploaded_files
+            while len(st.session_state.image_settings) < len(uploaded_files):
+                st.session_state.image_settings.append({
+                    "distortion": "None",
+                    "intensity": 0.5,
+                    "input_text": ""
+                })
+            
+            # Remove extra settings if files were removed
+            st.session_state.image_settings = st.session_state.image_settings[:len(uploaded_files)]
+            
+            for i, (file, settings) in enumerate(zip(uploaded_files, st.session_state.image_settings)):
                 with st.expander(f"Settings for {file.name}", expanded=True):
-                    col1, col2, col3 = st.columns(3)
+                    col1, col2 = st.columns([1, 2])
                     
                     with col1:
-                        distortion = st.selectbox(f"Distortion", 
-                            ["None", "Blur", "Brightness", "Contrast", "Sharpness", "Color", "Rain", "Warp"],
-                            key=f"distortion_{i}")
+                        # Load and process image
+                        image = Image.open(file)
+                        processed_image = apply_distortion(
+                            image, 
+                            settings["distortion"],
+                            settings["intensity"]
+                        )
+                        st.image(processed_image, caption=f"Preview: {file.name}", use_column_width=True)
                     
-                        with col2:
-                            intensity = st.slider("Intensity", 0.0, 1.0, 0.5, key=f"intensity_{i}")
+                    with col2:
+                        # Distortion selection
+                        settings["distortion"] = st.selectbox(
+                            "Distortion",
+                            ["None", "Blur", "Brightness", "Contrast", "Sharpness", "Color", "Rain", "Warp"],
+                            key=f"distortion_{i}",
+                            index=["None", "Blur", "Brightness", "Contrast", "Sharpness", "Color", "Rain", "Warp"].index(settings["distortion"])
+                        )
                         
-                        with col3:
-                            input_text = st.text_input("Input text", key=f"input_{i}")
+                        # Intensity slider
+                        settings["intensity"] = st.slider(
+                            "Intensity", 
+                            0.0, 1.0, 
+                            settings["intensity"],
+                            key=f"intensity_{i}"
+                        )
                         
-                        image_settings.append({
-                            "Image": file,
-                            "Distortion": distortion,
-                            "Intensity": intensity,
-                            "Input Text": input_text
-                        })
+                        # Input text
+                        settings["input_text"] = st.text_input(
+                            "Input text", 
+                            value=settings["input_text"],
+                            key=f"input_{i}"
+                        )
         
         # Button to start bulk analysis
-        if st.button("Run Bulk Analysis") and image_settings:
+        if st.button("Run Bulk Analysis") and uploaded_files:
             results = []
             progress_bar = st.progress(0)
             
-            for i, settings in enumerate(image_settings):
+            for i, (file, settings) in enumerate(zip(uploaded_files, st.session_state.image_settings)):
                 try:
-                    image = Image.open(settings['Image'])
+                    image = Image.open(file)
                     
                     # Apply distortion
-                    if settings['Distortion'] != "None":
-                        warp_params = {}
-                        if settings['Distortion'] == "Warp":
-                            warp_params = {
-                                'wave_amplitude': 20,
-                                'wave_frequency': 0.05,
-                                'bulge_factor': 30
-                            }
-                        processed_image = apply_distortion(image, settings['Distortion'], settings['Intensity'], warp_params=warp_params)
-                    else:
-                        processed_image = image
+                    processed_image = apply_distortion(image, settings["distortion"], settings["intensity"])
                     
                     # Get AI response
-                    response = get_gemini_response(settings['Input Text'], processed_image, model_choice)
+                    response = get_gemini_response(settings["input_text"], processed_image, model_choice)
                     
                     # Add result to list
                     results.append({
-                        "Image": settings['Image'].name,
-                        "Distortion": settings['Distortion'],
-                        "Intensity": settings['Intensity'],
-                        "Input Text": settings['Input Text'],
+                        "Image": file.name,
+                        "Distortion": settings["distortion"],
+                        "Intensity": settings["intensity"],
+                        "Input Text": settings["input_text"],
                         "AI Response": response
                     })
+                    
+                    # Show AI response
+                    st.write(f"AI Response for {file.name}:")
+                    st.write(response)
+                    st.markdown("---")  # Add a separator between images
+                    
                 except Exception as e:
-                    st.error(f"Error processing {settings['Image'].name}: {str(e)}")
+                    st.error(f"Error processing {file.name}: {str(e)}")
                 
-                progress_bar.progress((i + 1) / len(image_settings))
+                progress_bar.progress((i + 1) / len(uploaded_files))
             
             if results:
                 results_df = pd.DataFrame(results)
@@ -182,6 +214,8 @@ if api_key:
                 )
             else:
                 st.warning("No results were generated. Please check your inputs and try again.")
+        elif not uploaded_files:
+            st.warning("Please upload at least one image to proceed with bulk analysis.")
 
 else:
     st.warning("Please enter your API key to proceed.")
