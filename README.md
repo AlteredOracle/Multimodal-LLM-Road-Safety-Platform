@@ -48,12 +48,12 @@ The scope of this project includes:
 ## Technical Stack
 
 ![Python](https://img.shields.io/badge/Python-v3.10+-blue)
-![Streamlit](https://img.shields.io/badge/Streamlit-v1.28.0+-blue)
-![Google Generative AI](https://img.shields.io/badge/Google_Generative_AI-v0.3.1+-blue)
-![Pillow](https://img.shields.io/badge/Pillow-v10.0.0+-blue)
-![NumPy](https://img.shields.io/badge/NumPy-v1.24.0+-blue)
-![SciPy](https://img.shields.io/badge/SciPy-v1.10.0+-blue)
-![Pandas](https://img.shields.io/badge/Pandas-v2.0.0+-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-v1.39.0+-blue)
+![Google Generative AI](https://img.shields.io/badge/Google_Generative_AI-v0.8.3+-blue)
+![Pillow](https://img.shields.io/badge/Pillow-v10.4.0+-blue)
+![NumPy](https://img.shields.io/badge/NumPy-v2.1.2+-blue)
+![SciPy](https://img.shields.io/badge/SciPy-v1.14.1+-blue)
+![Pandas](https://img.shields.io/badge/Pandas-v2.2.3+-blue)
 
 ## Setup and Installation
 
