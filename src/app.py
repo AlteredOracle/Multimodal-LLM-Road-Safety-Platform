@@ -399,10 +399,22 @@ if st.session_state.api_key:
             folder_path = st.text_input("Enter folder path containing images:")
 
             if folder_path:
-                if os.path.isdir(folder_path):
-                    image_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-                    uploaded_files = [os.path.join(folder_path, f) for f in image_files]
+                # Sanitize and validate path
+                # 1. Expand user (~) and get absolute path
+                safe_path = os.path.abspath(os.path.expanduser(folder_path))
+                
+                # 2. Define allowing base directory (User's Home Directory is a reasonable default for local apps)
+                base_dir = os.path.abspath(os.path.expanduser("~"))
+                
+                # 3. Check if the path is safe (starts with base_dir)
+                if not safe_path.startswith(base_dir):
+                    st.error(f"Security Error: Access denied. Please select a folder within your home directory ({base_dir}).")
+                elif os.path.isdir(safe_path):
+                    image_files = [f for f in os.listdir(safe_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                    uploaded_files = [os.path.join(safe_path, f) for f in image_files]
                     st.success(f"Found {len(uploaded_files)} images in the specified folder.")
+                else:
+                     st.error("Invalid folder path or directory does not exist.")
 
                     # Display a sample of found images
                     if uploaded_files:
