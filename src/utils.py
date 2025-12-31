@@ -182,8 +182,17 @@ def get_gemini_response(input_text, image, model_name, system_instructions, expe
         
         if content:
             response = model.generate_content(content)
-            text_response = response.text if response else "No response from the model."
             
+            # Check if the response was blocked
+            if response.prompt_feedback and response.prompt_feedback.block_reason:
+                 return f"Response blocked. Reason: {response.prompt_feedback.block_reason}", {"error": "Response blocked by safety filters"}
+
+            try:
+                text_response = response.text
+            except Exception:
+                # Fallback if text access fails (e.g. empty candidates but no clear block reason)
+                return "No response generated (likely blocked or empty).", {"error": "No content generated"}
+
             # Extract JSON from the response
             json_match = re.search(r'===JSON===\s*(.*?)\s*===JSON===', text_response, re.DOTALL)
             if json_match:
@@ -205,3 +214,17 @@ def get_gemini_response(input_text, image, model_name, system_instructions, expe
     except Exception as e:
         error_message = f"Error generating response: {str(e)}"
         return error_message, {"error": error_message}
+
+def list_available_models():
+    """
+    Lists available Gemini models that support generateContent.
+    """
+    try:
+        models = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                models.append(m.name)
+        return models
+    except Exception as e:
+        print(f"Error listing models: {str(e)}")
+        return []

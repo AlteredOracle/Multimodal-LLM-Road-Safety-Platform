@@ -1,5 +1,4 @@
 
-import numpy as np
 
 def run_prompt_injection_test(base_prompt, injection_prompt):
     """
