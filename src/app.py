@@ -413,8 +413,6 @@ if st.session_state.api_key:
                     image_files = [f for f in os.listdir(safe_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
                     uploaded_files = [os.path.join(safe_path, f) for f in image_files]
                     st.success(f"Found {len(uploaded_files)} images in the specified folder.")
-                else:
-                     st.error("Invalid folder path or directory does not exist.")
 
                     # Display a sample of found images
                     if uploaded_files:
@@ -426,8 +424,7 @@ if st.session_state.api_key:
                             with cols[i]:
                                 st.image(Image.open(img_path), caption=os.path.basename(img_path), use_column_width=True)
                 else:
-                    st.error("Invalid folder path. Please check and try again.")
-                    uploaded_files = []
+                    st.error("Invalid folder path or directory does not exist.")
             else:
                 uploaded_files = []
 
