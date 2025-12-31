@@ -114,6 +114,8 @@ st.session_state.api_key = st.text_input("Enter your Gemini API key:", type="pas
 
 if st.session_state.api_key:
     os.environ['GEMINI_API_KEY'] = st.session_state.api_key
+    genai.configure(api_key=os.environ['GEMINI_API_KEY'])
+
     # Fetch available models
     try:
         available_models = list_available_models()
