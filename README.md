@@ -43,6 +43,9 @@ The scope of this project includes:
 - Customizable system instructions for AI
 - Predefined and custom prompts for analysis
 - AI-generated responses and recommendations for road safety scenarios
+- Red Teaming module for safety and robustness testing:
+  - Prompt Injection testing
+  - Adversarial Image testing
 - Structured CSV output for analysis results
 
 ## Technical Stack
@@ -104,6 +107,12 @@ This command will run all the tests defined in the `test_all.py` file, which inc
    - Choose to upload multiple files or specify a folder path.
    - Set centralized distortion settings or customize for each image.
    - Run the bulk analysis to process all images and generate a CSV report.
+5. For Red Teaming:
+   - Select "Red Teaming" mode from the sidebar.
+   - Choose between "Prompt Injection" or "Adversarial Image Testing".
+   - **Prompt Injection**: Input an adversarial prompt (or use the default) and upload an image to see if the model's safety guidelines can be bypassed.
+   - **Adversarial Image Testing**: Apply distortions like Blur to an image and test if the model's analysis remains accurate.
+
 
 ## Sample Image for Testing
 
@@ -136,3 +145,11 @@ The structure showcases how user inputs are processed through our application, l
 For design mockups and visual representations of the Multimodal LLM Road Safety Platform, please refer to the following link:
 
 [View Design on Figma](https://www.figma.com/design/XaY1Gj4GGDYnQT3a7rHhKs/Multimodal-LLM-Road-Safety-Platform?node-id=0-1&t=m9u1DMpXtYAX23DD-1)
+
+## Future Roadmap
+
+The following features are planned for future releases:
+
+1.  **AI-Driven Repair Cost Estimation**: Integrating market data to provide estimated repair costs based on damage analysis.
+2.  **Improved Image Validation**: Enhanced pre-processing to reject low-quality or irrelevant images before analysis.
+3.  **Expanded Adversarial Testing**: More sophisticated image distortion techniques for the Red Teaming module.
